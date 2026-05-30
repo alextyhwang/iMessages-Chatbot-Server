@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 from google import genai
 from google.genai import types
-from config import Config
+from src.config import Config
 
 logger = logging.getLogger(__name__)
 

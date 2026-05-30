@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imessages-chatbot-server"
+version = "0.2.0"
+description = "macOS iMessage chatbot and OpenClaw presence sidecar"
+requires-python = ">=3.8"
+dependencies = [
+  "google-genai>=1.0.0",
+  "aiosqlite>=0.19.0",
+  "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+imessage-presence = "src.presence_cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

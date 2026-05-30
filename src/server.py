@@ -24,7 +24,7 @@ class EchoServer:
     def __init__(self):
         self.db = ConversationDatabase()
         self.monitor = MessageMonitor()
-        self.ai_client = AIClient()
+        self.ai_client = None if Config.IS_PRESENCE_ONLY else AIClient()
         self.message_sender = MessageSender()
         self.semaphore = asyncio.Semaphore(Config.MAX_CONCURRENT_REQUESTS)
         self.gui_lock = asyncio.Lock()
@@ -68,6 +68,9 @@ class EchoServer:
     async def init(self):
         logger.info("Initializing Echo Server...")
         Config.validate()
+        if Config.IS_PRESENCE_ONLY:
+            logger.info("MODE=presence-only: standalone chatbot polling and Gemini calls are disabled.")
+            return
         await self.db.init_db()
         await self.ai_client.init_session()
         logger.info("Echo Server initialized successfully")
@@ -187,6 +190,9 @@ class EchoServer:
     
     async def run(self):
         await self.init()
+        if Config.IS_PRESENCE_ONLY:
+            logger.info("Presence-only mode is ready. Use `imessage-presence` or `python -m src.presence_cli` for commands.")
+            return
         self.running = True
         
         logger.info("Echo Server is now running. Press Ctrl+C to stop.")
@@ -206,8 +212,10 @@ class EchoServer:
             logger.info(f"Waiting for {len(self.tasks)} active tasks to complete...")
             await asyncio.gather(*self.tasks, return_exceptions=True)
         
-        await self.ai_client.close_session()
-        await self.db.close()
+        if self.ai_client:
+            await self.ai_client.close_session()
+        if self.db and self.db.db:
+            await self.db.close()
         
         logger.info("Echo Server shut down successfully")
 
@@ -235,4 +243,3 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
-
