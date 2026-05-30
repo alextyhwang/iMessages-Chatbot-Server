@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from src.config import Config
+from src.presence import escape_applescript_string
 
 logger = logging.getLogger(__name__)
 
@@ -10,11 +11,7 @@ class MessageSender:
     
     @staticmethod
     def _escape_applescript_string(text: str) -> str:
-        text = text.replace('\\', '\\\\')
-        text = text.replace('"', '\\"')
-        text = text.replace('\n', '\\n')
-        text = text.replace('\r', '\\r')
-        return text
+        return escape_applescript_string(text)
     
     async def navigate_to_chat_and_type_dot(self, recipient: str) -> bool:
         escaped_recipient = self._escape_applescript_string(recipient)
@@ -160,4 +157,3 @@ class MessageSender:
                 return False
         
         return False
-
