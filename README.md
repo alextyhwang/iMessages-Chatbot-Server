@@ -137,3 +137,152 @@ Send a test message to your iPhone's phone number from another device. You shoul
 2. AI API request/response logs
 3. Message sent confirmation
 4. Reply appearing in Messages app
+
+---
+
+## OpenClaw Presence Sidecar
+
+This project can also run as an iMessage presence adapter for OpenClaw. In this mode OpenClaw remains the agent runtime and this project only provides Messages.app UI behavior:
+
+- focus the relevant thread so Messages can mark it read naturally
+- show a typing indicator by placing a temporary draft placeholder
+- keep typing alive during longer OpenClaw turns
+- clear the draft when work finishes
+
+This mode does not use Gemini and does not send automatic replies.
+
+### Install the CLI
+
+```bash
+python3 -m pip install -e .
+```
+
+This installs:
+
+```bash
+imessage-presence
+```
+
+You can also run it without installation:
+
+```bash
+python3 -m src.presence_cli status --json
+```
+
+### Presence Commands
+
+```bash
+imessage-presence status --json
+imessage-presence focus --to +14084421270 --json
+imessage-presence mark-read --to +14084421270 --json
+imessage-presence typing-start --to +14084421270 --json
+imessage-presence typing --to +14084421270 --duration 5s --json
+imessage-presence typing-session --to +14084421270 --max-duration 120s --refresh 4s --json
+imessage-presence typing-stop --to +14084421270 --json
+imessage-presence clear --json
+```
+
+All commands support:
+
+```text
+--to
+--chat-id
+--chat-guid
+--chat-identifier
+--timeout
+--dry-run
+--json
+```
+
+Successful JSON output is stable:
+
+```json
+{
+  "ok": true,
+  "action": "typing-start",
+  "target": "+14084421270",
+  "method": "ui-applescript"
+}
+```
+
+Failures are also stable:
+
+```json
+{
+  "ok": false,
+  "action": "typing-start",
+  "method": "ui-applescript",
+  "error": "target_required",
+  "message": "Provide --to, --chat-id, --chat-guid, or --chat-identifier."
+}
+```
+
+### Presence-Only Mode
+
+Set this when OpenClaw is handling messages, so this project cannot become a duplicate responder:
+
+```env
+MODE=presence-only
+```
+
+Then use only the CLI from OpenClaw hooks. `run.py` will not start the polling/Gemini reply loop in this mode.
+
+### OpenClaw Config
+
+Use the sidecar from OpenClaw's iMessage channel configuration:
+
+```json
+{
+  "channels": {
+    "imessage": {
+      "presence": {
+        "enabled": true,
+        "mode": "ui",
+        "cliPath": "/usr/local/bin/imessage-presence",
+        "markReadOnInbound": true,
+        "typingOnInbound": true,
+        "typingKeepaliveSeconds": 4,
+        "typingMaxSeconds": 120,
+        "focusMessagesApp": true,
+        "clearDraftOnStop": true
+      }
+    }
+  }
+}
+```
+
+Presence command failures should be logged by OpenClaw but should not fail the agent turn.
+
+Example OpenClaw-style hook flow:
+
+```bash
+imessage-presence mark-read --to "$OPENCLAW_IMESSAGE_TARGET" --json
+imessage-presence typing-session --to "$OPENCLAW_IMESSAGE_TARGET" --max-duration 120s --refresh 4s --json &
+# Run the OpenClaw agent turn and send the final response through OpenClaw's iMessage channel.
+imessage-presence typing-stop --to "$OPENCLAW_IMESSAGE_TARGET" --json
+imessage-presence clear --json
+```
+
+### Local Verification
+
+Before wiring OpenClaw, check the local sidecar:
+
+```bash
+imessage-presence status --json
+imessage-presence mark-read --to +14084421270 --json --dry-run
+imessage-presence typing --to +14084421270 --duration 5s --json --dry-run
+imessage-presence clear --json --dry-run
+```
+
+Remove `--dry-run` only when you are ready for the command to control Messages.app.
+
+### Permissions And Limits
+
+The UI mode uses normal Messages.app automation. It does not require disabling SIP and it does not claim private IMCore read receipt support. `mark-read` focuses the Messages conversation; Messages.app may mark the thread read as a side effect depending on the local Messages/iMessage settings.
+
+The Mac must be logged into the GUI session, awake, and allowed to control Messages.app:
+
+- Full Disk Access is needed only when resolving `--chat-id` or `--chat-guid` from `~/Library/Messages/chat.db`.
+- Accessibility permission is needed for System Events keystrokes.
+- Automation permission is needed for controlling Messages.app.
+- A dedicated Mac mini is recommended because Messages.app may come to the foreground.
