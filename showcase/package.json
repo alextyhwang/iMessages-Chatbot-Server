@@ -1,7 +1,7 @@
 {
-  "name": "imessage-presence-showcase",
+  "name": "imessages-server-showcase",
   "version": "1.0.0",
-  "description": "Remotion launch video — SIP-free iMessage read receipts for OpenClaw & Hermes",
+  "description": "Remotion square launch video for iMessages Server (OpenClaw and Hermes)",
   "private": true,
   "license": "UNLICENSED",
   "dependencies": {

@@ -1,46 +1,26 @@
 # Launch showcase (Remotion)
 
-Animated iMessage-style launch film for the SIP-free presence sidecar — **OpenClaw & Hermes compatible**.
+Square (1080×1080) iMessage-style launch film for **iMessages Server** — OpenClaw & Hermes compatible.
 
-This is a designed demo (not a live Mac recording). It shows the product story:
+Designed demo (not a live Mac recording):
 
-1. Human sends an iMessage  
-2. **Delivered → Read** (via `imessage-presence mark-read`)  
-3. Typing indicator  
-4. Agent reply  
-5. OpenClaw / Hermes / SIP-free callouts  
+1. Brand title  
+2. Phone: Sent → Delivered → **Read** → typing → reply (zoomed in)  
+3. End card  
+
+Includes background music + UI sound effects under `public/audio/`.
 
 ## Quick start
 
 ```bash
 cd showcase
 npm install
-npm run dev          # Remotion Studio preview
-npm run render       # out/launch.mp4
-```
-
-Optional:
-
-```bash
-npm run render:webm  # out/launch.webm
-npm run render:gif   # out/launch.gif (heavier)
-```
-
-## Layout
-
-```text
-showcase/
-├── src/
-│   ├── LaunchVideo.tsx      # Scene timeline
-│   ├── components/          # Phone UI + atmosphere
-│   ├── theme.ts             # Colors + fonts
-│   └── Root.tsx             # Composition registry
-├── package.json
-└── remotion.config.ts
+npm run dev          # Remotion Studio
+npm run render       # out/launch.mp4 (square)
 ```
 
 ## Notes
 
-- Requires Node 18+ and `ffmpeg` on PATH for rendering.
-- Fonts load via `@remotion/google-fonts` (Outfit + Plus Jakarta Sans).
-- Output goes to `showcase/out/` (gitignored).
+- 1080×1080 for easy Twitter/X posting
+- Branding: **iMessages Server** (not “Presence”)
+- Requires Node 18+ and `ffmpeg` on PATH

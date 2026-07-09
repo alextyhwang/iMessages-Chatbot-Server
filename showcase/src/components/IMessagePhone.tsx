@@ -13,22 +13,22 @@ const TypingDots: React.FC = () => {
     <div
       style={{
         display: "flex",
-        gap: 5,
+        gap: 7,
         alignItems: "center",
-        height: 18,
+        height: 22,
         padding: "0 2px",
       }}
     >
       {[0, 1, 2].map((i) => {
         const wave = Math.sin((frame + i * 6) / 5);
-        const y = interpolate(wave, [-1, 1], [3, -4]);
+        const y = interpolate(wave, [-1, 1], [4, -5]);
         const opacity = interpolate(wave, [-1, 1], [0.35, 1]);
         return (
           <div
             key={i}
             style={{
-              width: 7,
-              height: 7,
+              width: 9,
+              height: 9,
               borderRadius: 99,
               background: "#aeaeb2",
               transform: `translateY(${y}px)`,
@@ -65,11 +65,11 @@ const Bubble: React.FC<BubbleProps> = ({
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const scale = interpolate(progress, [0, 1], [0.86, 1], {
+  const scale = interpolate(progress, [0, 1], [0.88, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const y = interpolate(progress, [0, 1], [18, 0], {
+  const y = interpolate(progress, [0, 1], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -88,12 +88,12 @@ const Bubble: React.FC<BubbleProps> = ({
         opacity,
         transform: `translateY(${y}px) scale(${scale})`,
         transformOrigin: isOut ? "bottom right" : "bottom left",
-        marginBottom: 6,
+        marginBottom: 10,
       }}
     >
       <div
         style={{
-          maxWidth: "78%",
+          maxWidth: "84%",
           background: typing
             ? colors.bubbleIn
             : isOut
@@ -101,19 +101,19 @@ const Bubble: React.FC<BubbleProps> = ({
               : colors.bubbleIn,
           color: isOut && !typing ? "white" : "#f2f2f7",
           borderRadius: typing
-            ? 18
+            ? 22
             : isOut
-              ? "18px 18px 5px 18px"
-              : "18px 18px 18px 5px",
-          padding: typing ? "12px 14px" : "10px 14px",
+              ? "22px 22px 6px 22px"
+              : "22px 22px 22px 6px",
+          padding: typing ? "16px 18px" : "14px 18px",
           fontFamily: fonts.ui,
-          fontSize: 16,
-          lineHeight: 1.35,
+          fontSize: 28,
+          lineHeight: 1.3,
           fontWeight: 500,
-          letterSpacing: "-0.01em",
+          letterSpacing: "-0.015em",
           boxShadow: isOut
-            ? "0 8px 24px rgba(10,132,255,0.25)"
-            : "0 8px 24px rgba(0,0,0,0.25)",
+            ? "0 10px 28px rgba(10,132,255,0.28)"
+            : "0 10px 28px rgba(0,0,0,0.28)",
         }}
       >
         {typing ? <TypingDots /> : children}
@@ -122,23 +122,27 @@ const Bubble: React.FC<BubbleProps> = ({
   );
 };
 
+/** Timeline offsets used by audio cues in LaunchVideo */
+export const PHONE_BEATS = {
+  outboundAt: 10,
+  deliveredAt: 38,
+  readAt: 74,
+  typingAt: 100,
+  replyAt: 170,
+} as const;
+
 /**
- * Human's phone: outbound message gets Delivered → Read, then agent types and replies.
+ * Square-friendly Messages panel — fills most of a 1080×1080 frame.
  */
-export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
-  style,
-}) => {
+export const HumanPhone: React.FC<{
+  style?: React.CSSProperties;
+}> = ({ style }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const outboundAt = 8;
-  const deliveredAt = 36;
-  const readAt = 72;
-  const typingAt = 96;
-  const replyAt = 165;
-  const highlightRead = frame >= readAt && frame < typingAt + 20;
+  const { outboundAt, deliveredAt, readAt, typingAt, replyAt } = PHONE_BEATS;
+  const highlightRead = frame >= readAt && frame < typingAt + 18;
 
-  const float = Math.sin(frame / 28) * 6;
   const enter = spring({
     frame,
     fps,
@@ -151,14 +155,14 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
   return (
     <div
       style={{
-        width: 340,
-        height: 700,
-        borderRadius: 48,
-        padding: 10,
-        background: `linear-gradient(160deg, #3a3a3c 0%, ${colors.phoneBezel} 40%, #0a0a0a 100%)`,
+        width: 1000,
+        height: 1000,
+        borderRadius: 52,
+        padding: 14,
+        background: `linear-gradient(160deg, #3a3a3c 0%, ${colors.phoneBezel} 45%, #0a0a0a 100%)`,
         boxShadow:
-          "0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.18)",
-        transform: `translateY(${interpolate(enter, [0, 1], [80, 0]) + float}px) scale(${interpolate(enter, [0, 1], [0.92, 1])})`,
+          "0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.16)",
+        transform: `translateY(${interpolate(enter, [0, 1], [36, 0])}px) scale(${interpolate(enter, [0, 1], [0.94, 1])})`,
         opacity: enter,
         ...style,
       }}
@@ -167,63 +171,30 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
         style={{
           width: "100%",
           height: "100%",
-          borderRadius: 40,
+          borderRadius: 44,
           overflow: "hidden",
           background: colors.phoneScreen,
-          position: "relative",
           display: "flex",
           flexDirection: "column",
         }}
       >
         <div
           style={{
-            height: 54,
-            padding: "14px 22px 0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            color: "white",
-            fontFamily: fonts.ui,
-            fontSize: 14,
-            fontWeight: 650,
-            position: "relative",
-            zIndex: 2,
-          }}
-        >
-          <span>9:41</span>
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: 10,
-              transform: "translateX(-50%)",
-              width: 110,
-              height: 28,
-              borderRadius: 20,
-              background: "#000",
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
-            }}
-          />
-          <span style={{ opacity: 0.9, fontSize: 12 }}>●●● LTE</span>
-        </div>
-
-        <div
-          style={{
-            background: "rgba(28,28,30,0.92)",
+            background: "rgba(28,28,30,0.96)",
             borderBottom: "1px solid rgba(255,255,255,0.06)",
-            padding: "8px 14px 12px",
+            padding: "22px 22px 18px",
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: 14,
           }}
         >
-          <div style={{ color: colors.accent, fontSize: 22, fontWeight: 500 }}>
+          <div style={{ color: colors.accent, fontSize: 30, fontWeight: 500 }}>
             ‹
           </div>
           <div
             style={{
-              width: 36,
-              height: 36,
+              width: 52,
+              height: 52,
               borderRadius: 99,
               background: `linear-gradient(145deg, #34c759, #30d158)`,
               display: "grid",
@@ -231,7 +202,7 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
               color: "white",
               fontFamily: fonts.display,
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 18,
             }}
           >
             ✦
@@ -241,27 +212,37 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
               style={{
                 color: "white",
                 fontFamily: fonts.ui,
-                fontWeight: 650,
-                fontSize: 15,
+                fontWeight: 700,
+                fontSize: 24,
                 letterSpacing: "-0.02em",
               }}
             >
               Agent
             </div>
             <div
-              style={{ color: "#8e8e93", fontSize: 11, fontFamily: fonts.ui }}
+              style={{ color: "#8e8e93", fontSize: 15, fontFamily: fonts.ui }}
             >
               iMessage
             </div>
+          </div>
+          <div
+            style={{
+              color: "#8e8e93",
+              fontFamily: fonts.ui,
+              fontSize: 15,
+              fontWeight: 600,
+            }}
+          >
+            9:41
           </div>
         </div>
 
         <div
           style={{
             flex: 1,
-            padding: "18px 12px 14px",
+            padding: "28px 22px 24px",
             background:
-              "radial-gradient(600px 400px at 50% 0%, #141418 0%, #000 70%)",
+              "radial-gradient(700px 500px at 50% 0%, #16161a 0%, #000 75%)",
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
@@ -272,15 +253,15 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
               alignSelf: "center",
               color: "#636366",
               fontFamily: fonts.ui,
-              fontSize: 11,
-              marginBottom: 14,
+              fontSize: 15,
+              marginBottom: 22,
             }}
           >
             Today 9:41 AM
           </div>
 
           <Bubble side="out" appearAt={outboundAt}>
-            hey — can you check if the deploy is green?
+            hey — is the deploy green?
           </Bubble>
 
           {receiptLabel ? (
@@ -288,24 +269,24 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
               style={{
                 textAlign: "right",
                 fontFamily: fonts.ui,
-                fontSize: 12,
+                fontSize: 18,
                 color: highlightRead ? colors.accentSoft : "#8e8e93",
-                marginTop: 2,
-                marginBottom: 8,
-                marginRight: 4,
+                marginTop: 4,
+                marginBottom: 14,
+                marginRight: 6,
                 letterSpacing: "0.01em",
-                fontWeight: highlightRead ? 650 : 500,
+                fontWeight: highlightRead ? 700 : 500,
                 textShadow: highlightRead
-                  ? "0 0 18px rgba(90,200,250,0.55)"
+                  ? "0 0 22px rgba(90,200,250,0.65)"
                   : "none",
-                transform: highlightRead ? "scale(1.04)" : "scale(1)",
+                transform: highlightRead ? "scale(1.06)" : "scale(1)",
                 transformOrigin: "right center",
               }}
             >
               {receiptLabel}
             </div>
           ) : (
-            <div style={{ height: 22 }} />
+            <div style={{ height: 36 }} />
           )}
 
           {frame >= typingAt && frame < replyAt ? (
@@ -315,43 +296,43 @@ export const HumanPhone: React.FC<{ style?: React.CSSProperties }> = ({
           ) : null}
 
           <Bubble side="in" appearAt={replyAt}>
-            Deploy is green. CI passed 4m ago — you’re clear to ship.
+            All green. You’re clear to ship.
           </Bubble>
         </div>
 
         <div
           style={{
-            padding: "10px 12px 18px",
-            background: "rgba(28,28,30,0.96)",
+            padding: "16px 18px 26px",
+            background: "rgba(28,28,30,0.98)",
             borderTop: "1px solid rgba(255,255,255,0.06)",
             display: "flex",
-            gap: 8,
+            gap: 10,
             alignItems: "center",
           }}
         >
           <div
             style={{
               flex: 1,
-              height: 34,
-              borderRadius: 18,
+              height: 46,
+              borderRadius: 24,
               border: "1px solid rgba(255,255,255,0.12)",
               color: "#636366",
               fontFamily: fonts.ui,
-              fontSize: 14,
+              fontSize: 18,
               display: "flex",
               alignItems: "center",
-              padding: "0 12px",
+              padding: "0 18px",
             }}
           >
             iMessage
           </div>
           <div
             style={{
-              width: 30,
-              height: 30,
+              width: 42,
+              height: 42,
               borderRadius: 99,
               background: colors.accent,
-              opacity: 0.35,
+              opacity: 0.4,
             }}
           />
         </div>

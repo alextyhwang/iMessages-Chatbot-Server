@@ -21,7 +21,7 @@ Use it in either mode:
 
 Drop-in hooks live under [`examples/openclaw`](examples/openclaw) and [`examples/hermes`](examples/hermes).
 
-**Launch film:** an animated iMessage showcase (Remotion) lives in [`showcase/`](showcase) — preview with `cd showcase && npm install && npm run dev`, render with `npm run render`.
+**Launch film:** a square (1080×1080) Remotion showcase for **iMessages Server** lives in [`showcase/`](showcase) — `cd showcase && npm install && npm run dev` / `npm run render`.
 
 ## Key Features
 

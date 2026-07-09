@@ -1,7 +1,7 @@
 import "./index.css";
 import React from "react";
 import { Composition } from "remotion";
-import { LaunchVideo } from "./LaunchVideo";
+import { LaunchVideo, LAUNCH_DURATION } from "./LaunchVideo";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -9,9 +9,9 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="LaunchVideo"
         component={LaunchVideo}
-        durationInFrames={660}
+        durationInFrames={LAUNCH_DURATION}
         fps={30}
-        width={1920}
+        width={1080}
         height={1080}
       />
     </>
