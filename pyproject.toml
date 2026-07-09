@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "imessages-chatbot-server"
 version = "0.2.0"
-description = "macOS iMessage chatbot and OpenClaw presence sidecar"
+description = "macOS iMessage chatbot and SIP-free OpenClaw/Hermes presence sidecar (read receipts + typing)"
 requires-python = ">=3.8"
 dependencies = [
   "google-genai>=1.0.0",

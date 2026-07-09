@@ -8,34 +8,48 @@
 
 # iMessages Chatbot Server
 
-iMessage has no public API. This project provides a high-performance solution by turning any macOS device into a headless iMessage gateway for large language models/automated messaging. It uses an asynchronous Python server that programmatically controls the native Messages app, achieving what Apple doesn't natively support: read receipts, typing indicators, and concurrent AI conversations over the iMessage network.
+**OpenClaw-compatible · Hermes-compatible · SIP-free read receipts**
+
+iMessage has no public API. This project turns a macOS device into a headless iMessage gateway for LLMs and agent runtimes. It uses an asynchronous Python server that drives the native Messages app — including **read receipts** and **typing indicators** — without disabling SIP or injecting private IMCore helpers.
+
+Use it in either mode:
+
+| Mode | Who replies | What this project does |
+| --- | --- | --- |
+| **Chatbot** (default) | This server (Gemini) | Poll `chat.db`, reply via AppleScript, show typing |
+| **Presence sidecar** | [OpenClaw](https://docs.openclaw.ai/) or [Hermes Agent](https://hermes-agent.nousresearch.com/) | `imessage-presence` CLI for mark-read + typing UI |
+
+Drop-in hooks live under [`examples/openclaw`](examples/openclaw) and [`examples/hermes`](examples/hermes).
 
 ## Key Features
 
+*   **OpenClaw & Hermes ready** — stable JSON CLI (`mark-read`, `typing-session`, `typing-stop`) plus example hooks for both agent runtimes.
+*   **SIP-free presence** — focuses the Messages thread so read receipts can fire naturally; no `imsg launch` / Private API required.
 *   Manages up to **20 concurrent conversations** using asynchronous API calls and a `semaphore` to control load on the AI backend.
 *   Injects a realistic typing latency by automatically chunking multi-paragraph AI responses at `\n\n` delimiters and sending each part sequentially with a **dynamic delay** between `1.0` and `3.0` seconds.
-*   Implements an **asynchronous debounce timer** of `0.3s` to batch rapid incoming messages from a single user, preventing premature API calls and ensuring the AI receives a more complete conversational context.
-*   Maintains **persistent conversation memory** by caching each user's message history in a `SQLite` database, ensuring all interactions are stateful and context-aware.
-*   Leverages targeted `AppleScript` automation to simulate native iMessage interactivity, triggering the **typing indicator** during AI processing and programmatically marking messages as **Read** upon ingestion from the `chat.db` file.
+*   Implements an **asynchronous debounce timer** of `0.3s` to batch rapid incoming messages from a single user.
+*   Maintains **persistent conversation memory** in a local `SQLite` database.
+*   Leverages targeted `AppleScript` automation for typing indicators and conversation focus (read-receipt side effect).
 
 ---
 
 ## How It Works
 
-The whole system is one simple loop. Our asyncio Python server constantly watches the local Messages database for new messages. When one comes in, it grabs the content, bundles it with the conversation history, and sends it off to the Gemini API. Once Gemini replies, the server uses AppleScript to type and send the response right back through the Messages app.
+The chatbot mode is one asyncio loop: watch `chat.db` → debounce → Gemini → AppleScript send.
+
+For OpenClaw / Hermes, keep `MODE=presence-only` and let the agent runtime own replies. On each inbound turn, call `imessage-presence mark-read` (and optionally `typing-session`) so the sender sees a read receipt and typing dots while the agent thinks.
 
 ![Architecture Diagram](docs/images/diagrammessages.png)
 
 ## Technical Stack
 
 *   **Runtime**: Python 3.8+ using <code>asyncio</code> for a non-blocking event loop.
-*   **AI Backend**: Google's Gemini Pro model, accessed via its official API.
-*   **Message I/O**: Reads directly from the <code>chat.db</code> SQLite file on macOS and writes responses using AppleScript automation.
-*   **Concurrency**: Manages simultaneous API calls with a semaphore, while a lock ensures messages are sent one-by-one to the GUI.
+*   **AI Backend** (chatbot mode): Google Gemini via the official API.
+*   **Agent runtimes** (presence mode): OpenClaw and Hermes Agent via hooks + CLI.
+*   **Message I/O**: Reads from <code>chat.db</code>; writes / presence via AppleScript automation.
+*   **Concurrency**: Semaphore-limited AI calls; a lock serializes Messages.app UI actions.
 
 ## Performance
-
-Here's what you can expect in terms of performance on a standard Mac Mini:
 
 | Metric | Value |
 | :--- | :--- |
@@ -62,6 +76,13 @@ cd hack-coms-therapy
 python3 -m pip install -r requirements.txt
 ```
 
+For OpenClaw / Hermes presence, also install the CLI entry point:
+
+```bash
+python3 -m pip install -e .
+# confirms: imessage-presence
+```
+
 ### 3. Configure Environment Variables
 
 Create a `.env` file in the project directory:
@@ -70,7 +91,7 @@ Create a `.env` file in the project directory:
 touch .env
 ```
 
-Edit `.env` and add your configuration:
+**Chatbot mode:**
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -79,91 +100,59 @@ MESSAGE_HISTORY_LIMIT=20
 ENABLE_TYPING_INDICATOR=true
 ```
 
-**Required Variables:**
-- `GEMINI_API_KEY`: Your Google Gemini API key
+**OpenClaw / Hermes presence mode:**
 
-**Optional Variables:**
-- `POLL_INTERVAL`: How often to check for new messages in seconds (default: 0.5)
-- `MESSAGE_HISTORY_LIMIT`: Number of recent messages to send to AI for context (default: 20)
-- `ENABLE_TYPING_INDICATOR`: Show typing indicators (default: true)
+```env
+MODE=presence-only
+```
+
+`GEMINI_API_KEY` is not required in presence-only mode.
 
 ### 4. Grant Full Disk Access to Terminal
 
-For the server to read the Messages database, you must grant Full Disk Access:
+1. Open **System Settings** → **Privacy & Security** → **Full Disk Access**
+2. Unlock and add your Terminal (or the process that runs the gateway / CLI)
+3. Restart that app
 
-1. Open **System Preferences** → **Security & Privacy** → **Privacy**
-2. Select **Full Disk Access** from the left sidebar
-3. Click the lock icon and authenticate
-4. Click the **+** button and add your Terminal application
-   - For Terminal.app: `/Applications/Utilities/Terminal.app`
-   - For iTerm2: `/Applications/iTerm.app`
-5. Restart your Terminal application
+### 5. Grant Accessibility + Automation (for typing / mark-read)
 
-### 5. Grant Accessibility Permissions (for Typing Indicators)
-
-1. Open **System Preferences** → **Security & Privacy** → **Privacy**
-2. Select **Accessibility** from the left sidebar
-3. Click **+** and add your Terminal application
-4. Check the box next to Terminal
-5. Restart your Terminal application
+1. **Privacy & Security** → **Accessibility** → allow Terminal / gateway host
+2. When prompted, allow **Automation** control of Messages.app and System Events
+3. Restart the app that will run `imessage-presence`
 
 ---
 
-## Usage
-
-### Starting the Server
+## Usage (Chatbot Mode)
 
 ```bash
 python3 run.py
 ```
 
-The server will:
-- Initialize the local conversation database
-- Connect to the Gemini API
-- Begin monitoring for new messages
-- Log all activity to both console and `server.log`
-
-### Stopping the Server
-
-Press `Ctrl+C` or send a SIGTERM signal. The server will gracefully:
-- Complete all in-flight conversations
-- Close database connections
-- Clean up resources
-
-### Testing
-
-Send a test message to your iPhone's phone number from another device. You should see:
-1. Console log showing message detection
-2. AI API request/response logs
-3. Message sent confirmation
-4. Reply appearing in Messages app
+Press `Ctrl+C` to stop. Send a test iMessage to the Mac's number to verify replies.
 
 ---
 
-## OpenClaw Presence Sidecar
+## OpenClaw & Hermes Presence Sidecar
 
-This project can also run as an iMessage presence adapter for OpenClaw. In this mode OpenClaw remains the agent runtime and this project only provides Messages.app UI behavior:
+Compatible with **OpenClaw** and **Hermes Agent** for iMessage **read receipts** and typing UI **without SIP disabled**.
 
-- focus the relevant thread so Messages can mark it read naturally
-- show a typing indicator by placing a temporary draft placeholder
-- keep typing alive during longer OpenClaw turns
-- clear the draft when work finishes
+In this mode the agent runtime remains the brain. This project only drives Messages.app:
 
-This mode does not use Gemini and does not send automatic replies.
+- focus the thread so Messages can mark it read (read receipt side effect)
+- show typing by placing a temporary draft placeholder
+- keep typing alive during longer turns
+- clear the draft when the turn finishes
+
+This mode does **not** use Gemini and does **not** send automatic replies. Set `MODE=presence-only`.
 
 ### Install the CLI
 
 ```bash
 python3 -m pip install -e .
+imessage-presence status --json
 ```
 
-This installs:
-
-```bash
-imessage-presence
-```
-
-You can also run it without installation:
+Or without install:
 
 ```bash
 python3 -m src.presence_cli status --json
@@ -182,19 +171,9 @@ imessage-presence typing-stop --to +14084421270 --json
 imessage-presence clear --json
 ```
 
-All commands support:
+All commands support `--to`, `--chat-id`, `--chat-guid`, `--chat-identifier`, `--timeout`, `--dry-run`, and `--json`.
 
-```text
---to
---chat-id
---chat-guid
---chat-identifier
---timeout
---dry-run
---json
-```
-
-Successful JSON output is stable:
+Successful JSON:
 
 ```json
 {
@@ -205,7 +184,7 @@ Successful JSON output is stable:
 }
 ```
 
-Failures are also stable:
+Failures stay stable for agent parsers:
 
 ```json
 {
@@ -217,55 +196,95 @@ Failures are also stable:
 }
 ```
 
-### Presence-Only Mode
+### Recommended turn flow
 
-Set this when OpenClaw is handling messages, so this project cannot become a duplicate responder:
+```bash
+imessage-presence mark-read --to "$TARGET" --json
+imessage-presence typing-session --to "$TARGET" --max-duration 120s --refresh 4s --json &
+# Agent runtime generates + sends the reply
+imessage-presence typing-stop --to "$TARGET" --json
+imessage-presence clear --json
+```
+
+Presence failures should be logged by the agent but must not fail the turn.
+
+---
+
+### OpenClaw setup (read receipts)
+
+OpenClaw's built-in iMessage read receipts use the `imsg` private API (`sendReadReceipts`) and require SIP disabled. This sidecar is the **SIP-free alternative**.
+
+1. Install the CLI on the Messages Mac (`pip install -e .`).
+2. Copy the example hook:
+
+```bash
+mkdir -p ~/.openclaw/hooks
+cp -R examples/openclaw/imessage-presence ~/.openclaw/hooks/
+openclaw hooks enable imessage-presence
+openclaw gateway restart
+```
+
+3. Keep this repo in presence-only mode:
 
 ```env
 MODE=presence-only
 ```
 
-Then use only the CLI from OpenClaw hooks. `run.py` will not start the polling/Gemini reply loop in this mode.
-
-### OpenClaw Config
-
-Use the sidecar from OpenClaw's iMessage channel configuration:
-
-```json
-{
-  "channels": {
-    "imessage": {
-      "presence": {
-        "enabled": true,
-        "mode": "ui",
-        "cliPath": "/usr/local/bin/imessage-presence",
-        "markReadOnInbound": true,
-        "typingOnInbound": true,
-        "typingKeepaliveSeconds": 4,
-        "typingMaxSeconds": 120,
-        "focusMessagesApp": true,
-        "clearDraftOnStop": true
-      }
-    }
-  }
-}
-```
-
-Presence command failures should be logged by OpenClaw but should not fail the agent turn.
-
-Example OpenClaw-style hook flow:
+4. Optional env overrides for the hook / CLI:
 
 ```bash
-imessage-presence mark-read --to "$OPENCLAW_IMESSAGE_TARGET" --json
-imessage-presence typing-session --to "$OPENCLAW_IMESSAGE_TARGET" --max-duration 120s --refresh 4s --json &
-# Run the OpenClaw agent turn and send the final response through OpenClaw's iMessage channel.
-imessage-presence typing-stop --to "$OPENCLAW_IMESSAGE_TARGET" --json
-imessage-presence clear --json
+export IMESSAGE_PRESENCE_CLI=/usr/local/bin/imessage-presence
+export IMESSAGE_PRESENCE_TYPING_MAX=120s
+export IMESSAGE_PRESENCE_TYPING_REFRESH=4s
 ```
 
-### Local Verification
+5. Verify dry-run before live UI control:
 
-Before wiring OpenClaw, check the local sidecar:
+```bash
+imessage-presence mark-read --to +14084421270 --json --dry-run
+imessage-presence typing --to +14084421270 --duration 1s --json --dry-run
+```
+
+If you already run `imsg launch` with private-API read/typing, disable this hook so the two paths do not fight over Messages.app.
+
+Example files: [`examples/openclaw/imessage-presence`](examples/openclaw/imessage-presence).
+
+---
+
+### Hermes Agent setup (read receipts)
+
+Hermes BlueBubbles / Photon paths can send native read receipts when their Private API / managed bridge supports it. Use this sidecar when you want **local Messages.app UI presence without Private API / SIP changes** — for example BlueBubbles without the helper, or any Hermes iMessage path where the Mac still has Messages signed in.
+
+1. Install the CLI on the Messages Mac.
+2. Install the gateway hook:
+
+```bash
+mkdir -p ~/.hermes/hooks
+cp -R examples/hermes/imessage-presence ~/.hermes/hooks/
+```
+
+3. Set presence-only mode in this project:
+
+```env
+MODE=presence-only
+```
+
+4. Restart Hermes:
+
+```bash
+hermes gateway restart
+# or: hermes gateway run
+```
+
+The hook listens for `agent:start` / `agent:end` on iMessage-like platforms (`bluebubbles`, `imessage`, …), calls `mark-read` + `typing-session` on start, and `typing-stop` + `clear` on end.
+
+If BlueBubbles Private API already marks chats read (`platforms.bluebubbles.extra.send_read_receipts: true`), either leave this hook out or set Hermes `send_read_receipts: false` so only one path owns receipts.
+
+Example files: [`examples/hermes/imessage-presence`](examples/hermes/imessage-presence).
+
+---
+
+### Local verification
 
 ```bash
 imessage-presence status --json
@@ -276,13 +295,23 @@ imessage-presence clear --json --dry-run
 
 Remove `--dry-run` only when you are ready for the command to control Messages.app.
 
-### Permissions And Limits
+### Permissions and limits
 
-The UI mode uses normal Messages.app automation. It does not require disabling SIP and it does not claim private IMCore read receipt support. `mark-read` focuses the Messages conversation; Messages.app may mark the thread read as a side effect depending on the local Messages/iMessage settings.
+UI mode uses normal Messages.app automation. It does **not** require disabling SIP and does **not** claim private IMCore read-receipt RPCs. `mark-read` focuses the conversation; Messages.app may mark the thread read as a side effect when **Settings → Messages → Send Read Receipts** (or the per-chat equivalent) is enabled.
 
-The Mac must be logged into the GUI session, awake, and allowed to control Messages.app:
+The Mac must be logged into a GUI session, awake, and allowed to control Messages.app:
 
-- Full Disk Access is needed only when resolving `--chat-id` or `--chat-guid` from `~/Library/Messages/chat.db`.
-- Accessibility permission is needed for System Events keystrokes.
-- Automation permission is needed for controlling Messages.app.
-- A dedicated Mac mini is recommended because Messages.app may come to the foreground.
+- Full Disk Access — needed when resolving `--chat-id` / `--chat-guid` from `chat.db`
+- Accessibility — System Events keystrokes
+- Automation — Messages.app control
+- A dedicated Mac mini is recommended because Messages.app may come to the foreground
+
+### Compatibility matrix
+
+| Runtime | How to wire | Read receipts | Typing |
+| --- | --- | --- | --- |
+| **OpenClaw** | `examples/openclaw/imessage-presence` hook | Yes (UI focus / SIP-free) | Yes |
+| **Hermes Agent** | `examples/hermes/imessage-presence` hook | Yes (UI focus / SIP-free) | Yes |
+| Standalone chatbot | `python3 run.py` | Typing only in-loop today | Yes |
+| OpenClaw `imsg` private API | Native `sendReadReceipts` | Yes (requires SIP off) | Yes |
+| Hermes BlueBubbles Private API | `send_read_receipts` | Yes (requires helper) | Yes |
