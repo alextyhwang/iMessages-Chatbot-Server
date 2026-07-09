@@ -14,7 +14,7 @@ from src.presence import (
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="imessage-presence",
-        description="Control Messages.app read/typing presence for OpenClaw without private IMCore access.",
+        description="Control Messages.app read/typing presence for OpenClaw and Hermes Agent without private IMCore access.",
     )
     parser.add_argument(
         "action",

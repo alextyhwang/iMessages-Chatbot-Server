@@ -2,7 +2,7 @@
 Echo - iMessage AI Conversation Server
 
 An asynchronous Python server that bridges Apple's iMessage with AI models,
-enabling intelligent, context-aware conversations at scale.
+plus a SIP-free presence sidecar (read receipts + typing) for OpenClaw and Hermes.
 """
 
 __version__ = "1.0.0"

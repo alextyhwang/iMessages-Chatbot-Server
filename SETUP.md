@@ -2,6 +2,8 @@
 
 This guide will walk you through setting up the iMessage AI conversation server on your Mac Mini.
 
+**Also compatible with OpenClaw and Hermes Agent** as a SIP-free presence sidecar (read receipts + typing). For that path, skip Gemini setup, set `MODE=presence-only`, install with `pip install -e .`, and follow the OpenClaw / Hermes sections in [README.md](README.md).
+
 ## Prerequisites
 
 ### Hardware Requirements
@@ -232,18 +234,17 @@ launchctl list | grep echo
 ```
 hack-coms-therapy/
 ├── run.py                      # Main entry point
-├── src/                        # Source code
-│   └── server.py              # Core server logic
+├── src/                        # Source code + imessage-presence CLI
+├── examples/                   # OpenClaw + Hermes presence hooks
 ├── scripts/                    # Utility scripts
-│   └── clear_database.py
 ├── docs/                       # Documentation
-│   └── AI_INTEGRATION_GUIDE.md
 └── data/                       # Data files
 ```
 
 ## Next Steps
 
 - Read [AI_INTEGRATION_GUIDE.md](docs/AI_INTEGRATION_GUIDE.md) for customization
+- For **OpenClaw** or **Hermes** read receipts without SIP: see [README.md](README.md#openclaw--hermes-presence-sidecar) and the hooks under `examples/openclaw` / `examples/hermes`
 - Monitor `server.log` for issues
 - Set up as a Launch Agent for automatic startup
 
