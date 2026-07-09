@@ -245,7 +245,7 @@ export const HumanPhone: React.FC<{
               "radial-gradient(700px 500px at 50% 0%, #16161a 0%, #000 75%)",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-end",
+            justifyContent: "center",
           }}
         >
           <div
@@ -254,7 +254,7 @@ export const HumanPhone: React.FC<{
               color: "#636366",
               fontFamily: fonts.ui,
               fontSize: 15,
-              marginBottom: 22,
+              marginBottom: 28,
             }}
           >
             Today 9:41 AM
