@@ -1,0 +1,101 @@
+import React from "react";
+import {
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { colors, fonts } from "../theme";
+
+export const Atmosphere: React.FC = () => {
+  const frame = useCurrentFrame();
+  const drift = Math.sin(frame / 40) * 18;
+  const drift2 = Math.cos(frame / 55) * 22;
+
+  return (
+    <AbsoluteFill
+      style={{
+        background: `radial-gradient(1200px 700px at ${48 + drift * 0.1}% ${28 + drift2 * 0.05}%, ${colors.bgGlow} 0%, ${colors.bgMid} 42%, ${colors.bgDeep} 100%)`,
+      }}
+    >
+      <AbsoluteFill
+        style={{
+          opacity: 0.35,
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)",
+          backgroundSize: "3px 3px",
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(500px 320px at 78% 72%, rgba(10,132,255,0.18), transparent 70%)`,
+          transform: `translateY(${drift}px)`,
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(420px 280px at 18% 80%, rgba(90,200,250,0.12), transparent 70%)`,
+          transform: `translateY(${-drift2}px)`,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+export const FadeIn: React.FC<{
+  children: React.ReactNode;
+  delay?: number;
+  style?: React.CSSProperties;
+}> = ({ children, delay = 0, style }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const progress = spring({
+    frame: frame - delay,
+    fps,
+    config: { damping: 200, stiffness: 80 },
+  });
+  const opacity = interpolate(progress, [0, 1], [0, 1]);
+  const y = interpolate(progress, [0, 1], [28, 0]);
+
+  return (
+    <div style={{ opacity, transform: `translateY(${y}px)`, ...style }}>
+      {children}
+    </div>
+  );
+};
+
+export const BrandMark: React.FC<{ size?: number }> = ({ size = 18 }) => {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        fontFamily: fonts.display,
+        fontWeight: 700,
+        fontSize: size,
+        letterSpacing: "-0.03em",
+        color: colors.ink,
+      }}
+    >
+      <div
+        style={{
+          width: size * 1.15,
+          height: size * 1.15,
+          borderRadius: size * 0.32,
+          background: `linear-gradient(145deg, ${colors.accentSoft}, ${colors.accent})`,
+          boxShadow: `0 0 0 1px rgba(255,255,255,0.12), 0 10px 30px rgba(10,132,255,0.35)`,
+          display: "grid",
+          placeItems: "center",
+          color: "white",
+          fontSize: size * 0.62,
+          fontWeight: 800,
+        }}
+      >
+        i
+      </div>
+      Presence
+    </div>
+  );
+};
