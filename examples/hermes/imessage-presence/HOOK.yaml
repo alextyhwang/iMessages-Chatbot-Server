@@ -1,0 +1,5 @@
+name: imessage-presence
+description: SIP-free iMessage read receipts + typing via imessage-presence (Hermes compatible)
+events:
+  - agent:start
+  - agent:end
