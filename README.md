@@ -21,6 +21,8 @@ Use it in either mode:
 
 Drop-in hooks live under [`examples/openclaw`](examples/openclaw) and [`examples/hermes`](examples/hermes).
 
+**Launch film:** a square (1080×1080) Remotion showcase for **iMessages Server** lives in [`showcase/`](showcase) — `cd showcase && npm install && npm run dev` / `npm run render`.
+
 ## Key Features
 
 *   **OpenClaw & Hermes ready** — stable JSON CLI (`mark-read`, `typing-session`, `typing-stop`) plus example hooks for both agent runtimes.
